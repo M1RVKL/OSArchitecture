@@ -4,10 +4,109 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+
+enum Role {
+  CUSTOMER
+  COURIER
+  MANAGER
+  ADMIN
+}
+
+enum OrderStatus {
+  CREATED
+  ACCEPTED
+  PREPARING
+  READY
+  DELIVERING
+  DELIVERED
+  CANCELLED
+}
+
+// --- MODELS ---
+
+model User {
+  id            String @id @default(uuid()) @db.Uuid
+  email         String @unique
+  password_hash String
+  name          String
+  phone         String @unique
+  role          Role   @default(CUSTOMER)
+
+  // Зв'язки
+  managed_restaurants Restaurant[] @relation("ManagerRestaurants")
+  customer_orders     Order[]      @relation("CustomerOrders")
+  courier_orders      Order[]      @relation("CourierOrders")
+
+  @@map("users")
+}
+
+model Restaurant {
+  id         String   @id @default(uuid()) @db.Uuid
+  manager_id String   @db.Uuid
+  name       String
+  address    Json
+  rating     Decimal? @default(0.0) @db.Decimal
+  is_active  Boolean  @default(true)
+
+  // Зв'язки
+  manager    User       @relation("ManagerRestaurants", fields: [manager_id], references: [id])
+  menu_items MenuItem[]
+  orders     Order[]
+
+  @@map("restaurants")
+}
+
+model MenuItem {
+  id            String  @id @default(uuid()) @db.Uuid
+  restaurant_id String  @db.Uuid
+  name          String
+  price         Decimal @db.Decimal
+  is_available  Boolean @default(true)
+
+  // Зв'язки
+  restaurant  Restaurant  @relation(fields: [restaurant_id], references: [id])
+  order_items OrderItem[]
+
+  @@map("menu_items")
+}
+
+model Order {
+  id               String      @id @default(uuid()) @db.Uuid
+  customer_id      String      @db.Uuid
+  courier_id       String?     @db.Uuid // Nullable, бо кур'єр призначається не одразу
+  restaurant_id    String      @db.Uuid
+  status           OrderStatus @default(CREATED)
+  total_price      Decimal     @db.Decimal
+  delivery_address Json
+
+  // Зв'язки
+  customer    User        @relation("CustomerOrders", fields: [customer_id], references: [id])
+  courier     User?       @relation("CourierOrders", fields: [courier_id], references: [id])
+  restaurant  Restaurant  @relation(fields: [restaurant_id], references: [id])
+  order_items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                String  @id @default(uuid()) @db.Uuid
+  order_id          String  @db.Uuid
+  menu_item_id      String  @db.Uuid
+  quantity          Int
+  price_at_purchase Decimal @db.Decimal
+
+  // Зв'язки
+  order     Order    @relation(fields: [order_id], references: [id])
+  menu_item MenuItem @relation(fields: [menu_item_id], references: [id])
+
+  @@map("order_items")
 }
