@@ -1,16 +1,35 @@
 import prisma from '../prisma.js';
+import { 
+    isOrderEmpty, 
+    calculateTotal, 
+    canCancelOrder, 
+    validateCourierAssignment 
+} from '../utils/orderLogic.js';
 
 export const createOrder = async (req, res, next) => {
     try {
         const { customer_id, restaurant_id, delivery_address, items } = req.body;
 
         //  валідація
-        if (!items || items.length === 0) {
-            return res.status(400).json({ error: 'Замовлення не може бути порожнім' });
-        }
+        if (isOrderEmpty(items)) {
+    return res.status(400).json({ error: 'Замовлення не може бути порожнім' });
+}
 
         // або створюється все, або нічого
         const newOrder = await prisma.$transaction(async (tx) => {
+            //перевірка при створенні замовлення
+            const restaurant = await tx.restaurant.findUnique({
+                where: { id: restaurant_id }
+            });
+
+            if (!restaurant) {
+                throw new Error('Ресторан не знайдено');
+            }
+
+            if (!restaurant.is_active) {
+                throw new Error('RESTAURANT_INACTIVE');
+            }
+
             let total_price = 0;
             const orderItemsData = [];
 
@@ -64,19 +83,43 @@ export const updateOrderStatus = async (req, res, next) => {
         const { id } = req.params;
         const { status, courier_id } = req.body;
 
-        const existingOrder = await prisma.order.findUnique({ where: { id } });
-        if (!existingOrder) return res.status(404).json({ error: 'Замовлення не знайдено' });
+        const order = await prisma.order.findUnique({ where: { id } });
+        if (!order) return res.status(404).json({ error: 'Замовлення не знайдено' });
 
-        // не можна скасувати замовлення, яке вже доставляється
-        if (status === 'CANCELLED' && ['DELIVERING', 'DELIVERED'].includes(existingOrder.status)) {
-            return res.status(400).json({ error: 'Неможливо скасувати замовлення, що вже в дорозі' });
+        const currentStatus = order.status;
+
+        //скасування клієнтом
+        if (status === 'CANCELLED' && !canCancelOrder(currentStatus)) {
+    return res.status(400).json({
+        error: 'Замовлення вже готується або в дорозі. Скасування неможливе.'
+    });
+}
+
+        //Обробка рестораном
+        // Логіка підтвердження та приготування
+        if (['ACCEPTED', 'PREPARING', 'READY'].includes(status)) {// Тут можна додати перевірку ролі менеджера (коли буде готова автентифікація)
+            console.log(`[Сповіщення]: Клієнт отримав статус: ${status}`);
         }
+
+        //Прийняття кур'єром
+        if (courier_id) {
+    const validation = validateCourierAssignment(currentStatus, order.courier_id, courier_id);
+    if (!validation.allowed) {
+        return res.status(400).json({ error: validation.error });
+    }
+    req.body.status = 'DELIVERING';
+}
 
         const updatedOrder = await prisma.order.update({
             where: { id },
-            data: { status, courier_id }
+            data: {
+                status: req.body.status || status,
+                courier_id
+            }
         });
 
         res.status(200).json(updatedOrder);
-    } catch (error) { next(error); }
+    } catch (error) {
+        next(error);
+    }
 };
