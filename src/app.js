@@ -3,6 +3,7 @@ import cors from 'cors';
 import restaurantRoutes from './routes/restaurantRoutes.js';
 import menuRoutes from './routes/menuRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/menu-items', menuRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/auth', authRoutes)
 
 // Роут для обробки 404 (Незнайдений ресурс)
 app.use((req, res, next) => {
