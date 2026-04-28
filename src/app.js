@@ -23,6 +23,7 @@ app.use((req, res, next) => {
 
 // Глобальний обробник помилок (для зручного повернення 400 та 409 статусів з бізнес-логіки)
 app.use((err, req, res, next) => {
+    console.error('SERVER ERROR LOG:', err);
     const statusCode = err.statusCode || 500;
     res.status(statusCode).json({
         error: err.message || 'Внутрішня помилка сервера'

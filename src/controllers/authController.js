@@ -6,11 +6,11 @@ const prisma = new PrismaClient();
 
 export const register = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, name, phone } = req.body;
 
         // 1. Базова валідація
-        if (!email || !password) {
-            const err = new Error('Email та пароль є обов’язковими');
+        if (!email || !password || !name || !phone) {
+            const err = new Error('Всі поля є обов’язковими');
             err.statusCode = 400;
             throw err;
         }
@@ -33,7 +33,9 @@ export const register = async (req, res, next) => {
         const newUser = await prisma.user.create({
             data: {
                 email,
-                password: hashedPassword
+                password_hash: hashedPassword,
+                name: name || 'Користувач',
+                phone: phone || null
             }
         });
 
@@ -51,7 +53,7 @@ export const login = async (req, res, next) => {
         const user = await prisma.user.findUnique({ where: { email } });
         
         // 2. Перевірка пароля
-        const isPasswordValid = user ? await bcrypt.compare(password, user.password) : false;
+        const isPasswordValid = user ? await bcrypt.compare(password, user.password_hash) : false;
 
         if (!user || !isPasswordValid) {
             const err = new Error('Невірний email або пароль');

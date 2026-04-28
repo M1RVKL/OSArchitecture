@@ -1,25 +1,57 @@
+process.env.JWT_SECRET = 'test_secret_key_123';
 import request from 'supertest';
 import app from '../../src/app.js';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 describe('Auth API', () => {
+    
+    // Очищаємо базу перед кожним тестом, щоб дані не "нашаровувалися"
+    beforeEach(async () => {
+        await prisma.orderItem.deleteMany({});
+        await prisma.order.deleteMany({});
+        await prisma.menuItem.deleteMany({});
+        await prisma.restaurant.deleteMany({});
+        await prisma.user.deleteMany({});
+    });
+
+    // Закриваємо з'єднання після завершення всіх тестів
+    afterAll(async () => {
+        await prisma.$disconnect();
+    });
 
     test('реєстрація має працювати (201) і блокувати дублікати (409)', async () => {
-        const user = { email: 'test@test.com', password: '123' };
+        const user = { email: 'test@test.com', 
+            password: '123', 
+            name: 'Тест',
+            phone: '1234567890'
+        };
         
-        // 1. Успішна реєстрація
         const res1 = await request(app).post('/api/auth/register').send(user);
+        if (res1.statusCode === 500) {
+        console.log('Помилка сервера (500):', res1.body);   
+    }
         expect(res1.statusCode).toBe(201);
         
         // 2. Спроба зареєструвати той самий email (Конфлікт)
+        // Завдяки тому, що ми видалили дані в beforeEach, тут ми гарантовано тестуємо саме конфлікт
         const res2 = await request(app).post('/api/auth/register').send(user);
         expect(res2.statusCode).toBe(409);
     });
 
     test('логін має працювати для зареєстрованого користувача', async () => {
-        const user = { email: 'login@test.com', password: '123' };
-        await request(app).post('/api/auth/register').send(user); // Реєструємо
+        const user = { email: 'login@test.com', 
+            password: '123', 
+            name: 'Логін Тест',
+            phone: '0987654321'
+        };
         
-        const res = await request(app).post('/api/auth/login').send(user); // Логінимось
+        // Спочатку реєструємо
+        await request(app).post('/api/auth/register').send(user); 
+        
+        // Потім логінимось
+        const res = await request(app).post('/api/auth/login').send(user); 
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty('token');
     });

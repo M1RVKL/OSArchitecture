@@ -8,10 +8,10 @@ import {
 
 export const createOrder = async (req, res, next) => {
     try {
-        const { customer_id, restaurant_id, delivery_address, items } = req.body;
+        const { customer_id, restaurant_id, delivery_address, order_items } = req.body;
 
         //  валідація
-        if (isOrderEmpty(items)) {
+        if (isOrderEmpty(order_items)) {
     return res.status(400).json({ error: 'Замовлення не може бути порожнім' });
 }
 
@@ -34,7 +34,7 @@ export const createOrder = async (req, res, next) => {
             const orderItemsData = [];
 
             // переіврк кожної страви та підрахунок ціни
-            for (const item of items) {
+            for (const item of order_items) {
                 const menuItem = await tx.menuItem.findUnique({
                     where: { id: item.menu_item_id }
                 });
@@ -81,40 +81,42 @@ export const createOrder = async (req, res, next) => {
 export const updateOrderStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { status, courier_id } = req.body;
+        const { status } = req.body;
 
         const order = await prisma.order.findUnique({ where: { id } });
         if (!order) return res.status(404).json({ error: 'Замовлення не знайдено' });
 
-        const currentStatus = order.status;
-
-        //скасування клієнтом
-        if (status === 'CANCELLED' && !canCancelOrder(currentStatus)) {
-    return res.status(400).json({
-        error: 'Замовлення вже готується або в дорозі. Скасування неможливе.'
-    });
-}
-
-        //Обробка рестораном
-        // Логіка підтвердження та приготування
-        if (['ACCEPTED', 'PREPARING', 'READY'].includes(status)) {// Тут можна додати перевірку ролі менеджера (коли буде готова автентифікація)
-            console.log(`[Сповіщення]: Клієнт отримав статус: ${status}`);
+        // 1. ПЕРЕВІРКА КОНФЛІКТУ (409) - має бути найпершою
+        if (status === 'DELIVERING') {
+            if (order.courier_id) {
+                return res.status(409).json({ error: 'Замовлення вже взято іншим кур\'єром' });
+            }
+            if (!req.user || !req.user.userId) {
+                return res.status(401).json({ error: 'Авторизація недійсна' });
+            }
+            req.body.courier_id = req.user.userId;
         }
 
-        //Прийняття кур'єром
-        if (courier_id) {
-    const validation = validateCourierAssignment(currentStatus, order.courier_id, courier_id);
-    if (!validation.allowed) {
-        return res.status(400).json({ error: validation.error });
-    }
-    req.body.status = 'DELIVERING';
-}
+        // 2. Валідація (ВИПРАВЛЕННЯ: запускаємо ТІЛЬКИ якщо це не було автоматичне призначення при DELIVERING)
+        // Ми не хочемо, щоб валідатор ламав нашу логіку DELIVERING
+        if (req.body.courier_id && status !== 'DELIVERING') {
+             const validation = validateCourierAssignment(order.status, order.courier_id, req.body.courier_id);
+             if (!validation.allowed) {
+                 return res.status(400).json({ error: validation.error });
+             }
+        }
 
+        // 3. Інша логіка (скасування тощо)
+        if (status === 'CANCELLED' && !canCancelOrder(order.status)) {
+            return res.status(400).json({ error: 'Скасування неможливе.' });
+        }
+
+        // 4. Оновлення
         const updatedOrder = await prisma.order.update({
             where: { id },
             data: {
-                status: req.body.status || status,
-                courier_id
+                status: status,
+                courier_id: req.body.courier_id || order.courier_id
             }
         });
 
