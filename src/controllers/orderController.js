@@ -1,13 +1,19 @@
 import prisma from '../prisma.js';
+import { 
+    isOrderEmpty, 
+    calculateTotal, 
+    canCancelOrder, 
+    validateCourierAssignment 
+} from '../utils/orderLogic.js';
 
 export const createOrder = async (req, res, next) => {
     try {
-        const { customer_id, restaurant_id, delivery_address, items } = req.body;
+        const { customer_id, restaurant_id, delivery_address, order_items } = req.body;
 
         //  валідація
-        if (!items || items.length === 0) {
-            return res.status(400).json({ error: 'Замовлення не може бути порожнім' });
-        }
+        if (isOrderEmpty(order_items)) {
+    return res.status(400).json({ error: 'Замовлення не може бути порожнім' });
+}
 
         // або створюється все, або нічого
         const newOrder = await prisma.$transaction(async (tx) => {
@@ -28,7 +34,7 @@ export const createOrder = async (req, res, next) => {
             const orderItemsData = [];
 
             // переіврк кожної страви та підрахунок ціни
-            for (const item of items) {
+            for (const item of order_items) {
                 const menuItem = await tx.menuItem.findUnique({
                     where: { id: item.menu_item_id }
                 });
@@ -75,49 +81,37 @@ export const createOrder = async (req, res, next) => {
 export const updateOrderStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { status, courier_id } = req.body;
+        const { status } = req.body;
 
         const order = await prisma.order.findUnique({ where: { id } });
         if (!order) return res.status(404).json({ error: 'Замовлення не знайдено' });
 
-        const currentStatus = order.status;
-
-        //скасування клієнтом
-        if (status === 'CANCELLED') {
-            const allowedForCancellation = ['CREATED', 'ACCEPTED'];
-            if (!allowedForCancellation.includes(currentStatus)) {
-                return res.status(400).json({
-                    error: 'Замовлення вже готується або в дорозі. Скасування неможливе.'
-                });
+        if (status === 'DELIVERING') {
+            if (order.courier_id) {
+                return res.status(409).json({ error: 'Замовлення вже взято іншим кур\'єром' });
             }
-            console.log(`[Сповіщення]: Ресторан отримав відміну замовлення №${id}`);
+            if (!req.user || !req.user.userId) {
+                return res.status(401).json({ error: 'Авторизація недійсна' });
+            }
+            req.body.courier_id = req.user.userId;
         }
 
-        //Обробка рестораном
-        // Логіка підтвердження та приготування
-        if (['ACCEPTED', 'PREPARING', 'READY'].includes(status)) {// Тут можна додати перевірку ролі менеджера (коли буде готова автентифікація)
-            console.log(`[Сповіщення]: Клієнт отримав статус: ${status}`);
+        if (req.body.courier_id && status !== 'DELIVERING') {
+             const validation = validateCourierAssignment(order.status, order.courier_id, req.body.courier_id);
+             if (!validation.allowed) {
+                 return res.status(400).json({ error: validation.error });
+             }
         }
 
-        //Прийняття кур'єром
-        if (courier_id) {
-            // 1. перевірка статусу
-            if (!['PREPARING', 'READY'].includes(currentStatus)) {
-                return res.status(400).json({ error: 'Замовлення недоступне для кур\'єра' });
-            }
-            // 2. чи не зайняте іншим
-            if (order.courier_id && order.courier_id !== courier_id) {
-                return res.status(409).json({ error: 'Замовлення вже прийняте іншим кур\'єром' });
-            }
-            //міняємо статус на DELIVERING при призначенні кур'єра
-            req.body.status = 'DELIVERING';
+        if (status === 'CANCELLED' && !canCancelOrder(order.status)) {
+            return res.status(400).json({ error: 'Скасування неможливе.' });
         }
 
         const updatedOrder = await prisma.order.update({
             where: { id },
             data: {
-                status: req.body.status || status,
-                courier_id
+                status: status,
+                courier_id: req.body.courier_id || order.courier_id
             }
         });
 
