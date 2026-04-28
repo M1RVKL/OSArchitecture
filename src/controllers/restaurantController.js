@@ -39,12 +39,12 @@ export const createRestaurant = async (req, res, next) => {
     }
 };
 
-// --- READ ALL (GET) ---
-// Отримання списку всіх активних ресторанів
+// ------------- READ ALL (GET) отримання списку всіх активних ресторанів -------------
+
 export const getAllRestaurants = async (req, res, next) => {
     try {
         const restaurants = await prisma.restaurant.findMany({
-            where: { is_active: true } // Інваріант: клієнтам віддаємо тільки активні
+            where: { is_active: true }
         });
         res.status(200).json(restaurants);
     } catch (error) {
@@ -52,8 +52,8 @@ export const getAllRestaurants = async (req, res, next) => {
     }
 };
 
-// --- READ ONE (GET) ---
-// Отримання конкретного ресторану за ID
+// -------------- READ ONE (GET) отримання конкретного ресторану за ID --------------
+
 export const getRestaurantById = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -72,8 +72,8 @@ export const getRestaurantById = async (req, res, next) => {
     }
 };
 
-// --- UPDATE (PATCH) ---
-// Часткове оновлення даних ресторану
+// ------------- UPDATE (PATCH) оновлення даних ресторану ---------------
+
 export const updateRestaurant = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -87,18 +87,17 @@ export const updateRestaurant = async (req, res, next) => {
 
         // --- ІНВАРІАНТИ ОНОВЛЕННЯ ---
 
-        // 1. Забороняємо змінювати рейтинг через цей ендпоінт (рейтинг має рахуватися з відгуків)
+        // 1. заборона міняти рейтинг (рейтинг має рахуватися з відгуків)
         if (rating !== undefined) {
             return res.status(400).json({ error: 'Рейтинг не можна оновлювати вручну' });
         }
 
-        // 2. Забороняємо передавати пусту назву, якщо поле name взагалі передано
+        // 2. не потрібно передавати пусту назву, якщо поле name взагалі передано
         if (name !== undefined && name.trim() === '') {
             return res.status(400).json({ error: 'Назва ресторану не може бути пустою' });
         }
 
-        // 3. Зміна менеджера - це критична операція. Якщо її намагаються зробити,
-        // перевіряємо, чи існує новий менеджер.
+        // 3. зміна менеджера. Якщо її намагаються зробити, перевіряємо, чи існує новий менеджер.
         if (manager_id) {
             const managerExists = await prisma.user.findUnique({ where: { id: manager_id } });
             if (!managerExists) {
@@ -123,8 +122,8 @@ export const updateRestaurant = async (req, res, next) => {
     }
 };
 
-// --- DELETE (DELETE) ---
-// "М'яке" видалення (Soft Delete) - замість видалення з БД просто робимо неактивним
+// ---------- DELETE (Soft Delete) - замість видалення з БД просто робимо неактивним --------------
+
 export const deleteRestaurant = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -140,7 +139,7 @@ export const deleteRestaurant = async (req, res, next) => {
             data: { is_active: false }
         });
 
-        // 204 No Content - стандартний статус для успішного видалення без тіла відповіді
+        // 204 No Content - статус для успішного видалення без тіла відповіді
         res.status(204).send();
     } catch (error) {
         next(error);
