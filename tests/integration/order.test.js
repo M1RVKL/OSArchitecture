@@ -13,14 +13,12 @@ describe('Integration Test: Order API', () => {
     let userId = '';
 
     beforeAll(async () => {
-        // Очищення БД в правильному порядку (видаляємо залежні записи спочатку)
         await prisma.orderItem.deleteMany({});
         await prisma.order.deleteMany({});
         await prisma.menuItem.deleteMany({});
         await prisma.restaurant.deleteMany({});
         await prisma.user.deleteMany({});
 
-        // 1. Реєстрація та логін
         const userData = { email: 'client@test.com', password: '123', name: 'Client', phone: '0000000000' };
         await request(app).post('/api/auth/register').send(userData);
         const loginRes = await request(app).post('/api/auth/login').send({ email: userData.email, password: '123' });
@@ -29,7 +27,6 @@ describe('Integration Test: Order API', () => {
         const user = await prisma.user.findUnique({ where: { email: userData.email } });
         userId = user.id;
 
-        // 2. Створення ресторану (додаємо manager_id, як вимагав сервер)
         const restRes = await request(app)
             .post('/api/restaurants')
             .set('Authorization', token)
@@ -42,7 +39,6 @@ describe('Integration Test: Order API', () => {
         if (!restRes.body.id) throw new Error(`Не вдалося створити ресторан: ${JSON.stringify(restRes.body)}`);
         restaurantId = restRes.body.id;
 
-        // 3. Створення страви
         const menuRes = await request(app)
             .post('/api/menu-items')
             .set('Authorization', token)
@@ -56,7 +52,6 @@ describe('Integration Test: Order API', () => {
         if (!menuRes.body.id) throw new Error(`Не вдалося створити страву: ${JSON.stringify(menuRes.body)}`);
         menuItemId = menuRes.body.id;
 
-        // 4. Створення замовлення
         const orderRes = await request(app)
             .post('/api/orders')
             .set('Authorization', token)
@@ -103,13 +98,11 @@ describe('Integration Test: Order API', () => {
 
     describe('PATCH /api/orders/:id/status', () => {
         test('помилка 400 при спробі скасувати замовлення, що вже в дорозі', async () => {
-            // Спочатку переводимо в DELIVERING
             await request(app)
                 .patch(`/api/orders/${orderId}/status`)
                 .set('Authorization', token)
                 .send({ status: 'DELIVERING' });
             
-            // Намагаємось скасувати
             const res = await request(app)
                 .patch(`/api/orders/${orderId}/status`)
                 .set('Authorization', token)

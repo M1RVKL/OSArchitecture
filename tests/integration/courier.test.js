@@ -3,11 +3,11 @@ import request from 'supertest';
 import app from '../../src/app.js';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient(); // <--- Ось ця змінна була відсутня
+const prisma = new PrismaClient(); 
 
 describe('Courier API', () => {
-    let tokenA = ''; // Токен для кур'єра А
-    let tokenB = ''; // Токен для кур'єра Б
+    let tokenA = '';
+    let tokenB = '';
     let orderId = '';
 
 
@@ -25,16 +25,13 @@ describe('Courier API', () => {
         await request(app).post('/api/auth/register').send(courierA);
         await request(app).post('/api/auth/register').send(courierB);
 
-        // 2. Отримуємо токени
         const resA = await request(app).post('/api/auth/login').send({ email: courierA.email, password: '123' });
         const resB = await request(app).post('/api/auth/login').send({ email: courierB.email, password: '123' });
         tokenA = `Bearer ${resA.body.token}`;
         tokenB = `Bearer ${resB.body.token}`;
 
-        // !!! ОСЬ ТУТ БУЛА ПОМИЛКА: Тобі треба знайти користувача в базі, щоб отримати його ID
         const user = await prisma.user.findUnique({ where: { email: courierA.email } });
 
-        // 3. Створюємо ресторан (використовуємо знайдений ID)
         const restRes = await request(app)
             .post('/api/restaurants')
             .set('Authorization', tokenA)
@@ -42,14 +39,12 @@ describe('Courier API', () => {
         
         const restaurantId = restRes.body.id;
 
-        // 4. Створюємо страву
         const menuRes = await request(app)
             .post('/api/menu-items')
             .set('Authorization', tokenA)
             .send({ restaurant_id: restaurantId, name: 'Pizza', price: 100 });
         const menuItemId = menuRes.body.id;
 
-        // 5. Створюємо замовлення
         const orderRes = await request(app)
             .post('/api/orders')
             .set('Authorization', tokenA)
@@ -72,7 +67,6 @@ describe('Courier API', () => {
             
         orderId = orderRes.body.id;
 
-        // Перевірка на випадок, якщо щось пішло не так
         if (!orderId) {
             throw new Error('Не вдалося створити замовлення в beforeAll!');
         }
@@ -83,13 +77,11 @@ describe('Courier API', () => {
     });
 
     test('PATCH /api/orders/:id/status має повертати 409, якщо замовлення вже взяли', async () => {
-        // 1. Кур'єр А бере замовлення
         await request(app)
             .patch(`/api/orders/${orderId}/status`)
             .set('Authorization', tokenA)
             .send({ status: 'DELIVERING' });
         
-        // 2. Кур'єр Б намагається взяти те саме
         const res = await request(app)
             .patch(`/api/orders/${orderId}/status`)
             .set('Authorization', tokenB)

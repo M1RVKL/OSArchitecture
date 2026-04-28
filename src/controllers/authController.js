@@ -8,14 +8,12 @@ export const register = async (req, res, next) => {
     try {
         const { email, password, name, phone } = req.body;
 
-        // 1. Базова валідація
         if (!email || !password || !name || !phone) {
             const err = new Error('Всі поля є обов’язковими');
             err.statusCode = 400;
             throw err;
         }
 
-        // 2. Перевірка на існування користувача через Prisma
         const existingUser = await prisma.user.findUnique({
             where: { email }
         });
@@ -26,10 +24,8 @@ export const register = async (req, res, next) => {
             throw err;
         }
 
-        // 3. Хешування
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 4. Створення користувача
         const newUser = await prisma.user.create({
             data: {
                 email,
@@ -49,10 +45,8 @@ export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        // 1. Пошук користувача
         const user = await prisma.user.findUnique({ where: { email } });
         
-        // 2. Перевірка пароля
         const isPasswordValid = user ? await bcrypt.compare(password, user.password_hash) : false;
 
         if (!user || !isPasswordValid) {
@@ -61,7 +55,6 @@ export const login = async (req, res, next) => {
             throw err;
         }
 
-        // 3. Генерація токена
         const token = jwt.sign(
             { userId: user.id, email: user.email }, 
             process.env.JWT_SECRET, 

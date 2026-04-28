@@ -86,7 +86,6 @@ export const updateOrderStatus = async (req, res, next) => {
         const order = await prisma.order.findUnique({ where: { id } });
         if (!order) return res.status(404).json({ error: 'Замовлення не знайдено' });
 
-        // 1. ПЕРЕВІРКА КОНФЛІКТУ (409) - має бути найпершою
         if (status === 'DELIVERING') {
             if (order.courier_id) {
                 return res.status(409).json({ error: 'Замовлення вже взято іншим кур\'єром' });
@@ -97,8 +96,6 @@ export const updateOrderStatus = async (req, res, next) => {
             req.body.courier_id = req.user.userId;
         }
 
-        // 2. Валідація (ВИПРАВЛЕННЯ: запускаємо ТІЛЬКИ якщо це не було автоматичне призначення при DELIVERING)
-        // Ми не хочемо, щоб валідатор ламав нашу логіку DELIVERING
         if (req.body.courier_id && status !== 'DELIVERING') {
              const validation = validateCourierAssignment(order.status, order.courier_id, req.body.courier_id);
              if (!validation.allowed) {
@@ -106,12 +103,10 @@ export const updateOrderStatus = async (req, res, next) => {
              }
         }
 
-        // 3. Інша логіка (скасування тощо)
         if (status === 'CANCELLED' && !canCancelOrder(order.status)) {
             return res.status(400).json({ error: 'Скасування неможливе.' });
         }
 
-        // 4. Оновлення
         const updatedOrder = await prisma.order.update({
             where: { id },
             data: {

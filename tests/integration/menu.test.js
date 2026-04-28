@@ -11,15 +11,12 @@ describe('Integration Test: Menu API', () => {
     let menuItemId = '';
 
     beforeEach(async () => {
-        // 1. Очищення бази (Гарантує ізоляцію)
         await prisma.orderItem.deleteMany({});
         await prisma.order.deleteMany({});
         await prisma.menuItem.deleteMany({});
         await prisma.restaurant.deleteMany({});
         await prisma.user.deleteMany({});
 
-        // 2. Підготовка даних (Seeding)
-        // Реєстрація та логін
         const userData = { email: 'menu@test.com', password: '123', name: 'Test', phone: '123456789' };
         await request(app).post('/api/auth/register').send(userData);
         
@@ -28,7 +25,6 @@ describe('Integration Test: Menu API', () => {
         });
         token = loginRes.body.token;
 
-        // Створення ресторану
         const user = await prisma.user.findUnique({ where: { email: userData.email } });
         const restRes = await request(app)
             .post('/api/restaurants')
@@ -37,7 +33,6 @@ describe('Integration Test: Menu API', () => {
         
         restaurantId = restRes.body.id; 
 
-        // Створення страви
         const itemRes = await request(app)
             .post('/api/menu-items')
             .set('Authorization', `Bearer ${token}`)
@@ -50,7 +45,6 @@ describe('Integration Test: Menu API', () => {
         await prisma.$disconnect();
     });
 
-    // ... далі твої тести ...
     describe('POST /api/menu-items', () => {
         test('має створювати страву при коректних даних', async () => {
             const res = await request(app)
@@ -70,7 +64,7 @@ describe('Integration Test: Menu API', () => {
                 .post('/api/menu-items')
                 .set('Authorization', `Bearer ${token}`)
                 .send({ 
-                    restaurant_id: restaurantId, // Використовуємо реальний ID
+                    restaurant_id: restaurantId,
                     name: 'Безкоштовна Піца', 
                     price: 0 
                 });
@@ -90,7 +84,7 @@ describe('Integration Test: Menu API', () => {
     describe('PATCH /api/menu-items/:id', () => {
         test("має повертати 400 при спробі встановити від'ємну ціну", async () => {
             const res = await request(app)
-                .patch(`/api/menu-items/${menuItemId}`) // Використовуємо real ID
+                .patch(`/api/menu-items/${menuItemId}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send({ price: -10 });
             

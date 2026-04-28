@@ -7,7 +7,6 @@ import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
-// Мідлвари
 app.use(cors());
 app.use(express.json());
 
@@ -16,12 +15,10 @@ app.use('/api/menu-items', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes)
 
-// Роут для обробки 404 (Незнайдений ресурс)
 app.use((req, res, next) => {
     res.status(404).json({ error: 'Ресурс не знайдено' });
 });
 
-// Глобальний обробник помилок (для зручного повернення 400 та 409 статусів з бізнес-логіки)
 app.use((err, req, res, next) => {
     console.error('SERVER ERROR LOG:', err);
     const statusCode = err.statusCode || 500;
