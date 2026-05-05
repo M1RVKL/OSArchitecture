@@ -17,12 +17,13 @@ export class UserFactory {
   /**
    * Створює нового користувача після перевірки бізнес-правил
    * @param {string} emailStr 
-   * @param {string} name 
+   * @param {string} name
+   * @param {string} phone
    * @param {string} passwordHash 
    * @param {string} role 
    * @returns {Promise<User>}
    */
-  async createNewUser(emailStr, name, passwordHash, role) {
+  async createNewUser(emailStr, name, phone, passwordHash, role) {
     const emailVO = new Email(emailStr);
     const existingUser = await this.userRepository.findByEmail(emailVO.value);
     if (existingUser) {
@@ -30,6 +31,6 @@ export class UserFactory {
     }
 
     const newId = crypto.randomUUID();
-    return new User(newId, emailVO, name, passwordHash, role);
+    return new User(newId, emailVO, name, phone, passwordHash, role);
   }
 }
