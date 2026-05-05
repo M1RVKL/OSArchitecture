@@ -5,7 +5,7 @@ export class Address {
    * @param {Object} params
    * @param {string} params.street
    * @param {string} params.city
-   * @param {string} params.flat
+   * @param {string} [params.flat]
    */
   constructor({ street, city, flat = null }) {
     if (!street || street.trim() === '') {
