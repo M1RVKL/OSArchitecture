@@ -1,0 +1,30 @@
+import express from 'express';
+import cors from 'cors';
+import restaurantRoutes from './routes/restaurantRoutes.js';
+import menuRoutes from './routes/menuRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/menu-items', menuRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/auth', authRoutes)
+
+app.use((req, res, next) => {
+    res.status(404).json({ error: 'Ресурс не знайдено' });
+});
+
+app.use((err, req, res, next) => {
+    console.error('SERVER ERROR LOG:', err);
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({
+        error: err.message || 'Внутрішня помилка сервера'
+    });
+});
+
+export default app;

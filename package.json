@@ -1,10 +1,14 @@
 {
   "name": "osarchitecture",
   "version": "1.0.0",
-  "description": "",
+  "description": "![Node.js](https://img.shields.io/badge/Node.js-REST_API-green.svg)\r ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue.svg)\r ![Prisma](https://img.shields.io/badge/Prisma-ORM-black.svg)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+  "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit",
+  "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration"
   },
   "repository": {
     "type": "git",
@@ -13,17 +17,26 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/M1RVKL/OSArchitecture/issues"
   },
   "homepage": "https://github.com/M1RVKL/OSArchitecture#readme",
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "^6.19.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
   },
   "devDependencies": {
-    "prisma": "^7.8.0"
+    "@types/node": "^25.6.0",
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "prisma": "^6.19.3",
+    "supertest": "^7.2.2"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
   }
 }

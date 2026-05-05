@@ -1,0 +1,40 @@
+### 0. ВАЖЛИВО: Оскільки у нас ще немає реєстрації,
+### створи вручну одного користувача в таблиці users
+### і скопіюй його ID (UUID) сюди замість "ТВІЙ-UUID-МЕНЕДЖЕРА"
+
+### 1. Створення ресторану (POST)
+POST http://localhost:3000/api/restaurants
+Content-Type: application/json
+
+{
+  "manager_id": "ТВІЙ-UUID-МЕНЕДЖЕРА",
+  "name": "KFC KPI",
+  "address": { "street": "Borshchagivska 128", "city": "Kyiv" }
+}
+
+> {% client.global.set("rest_id", response.body.id); %}
+
+### 2. Отримання всіх активних ресторанів (GET)
+GET http://localhost:3000/api/restaurants
+
+### 3. Отримання ресторану за ID (GET)
+GET http://localhost:3000/api/restaurants/{{rest_id}}
+
+### 4. Оновлення ресторану (PATCH) - Перевірка інваріанта
+PATCH http://localhost:3000/api/restaurants/{{rest_id}}
+Content-Type: application/json
+
+{
+  "name": "KFC Smart Plaza"
+}
+
+### 5. Спроба зламати інваріант (має повернути 400 Bad Request)
+PATCH http://localhost:3000/api/restaurants/{{rest_id}}
+Content-Type: application/json
+
+{
+  "rating": 5.0
+}
+
+### 6. Видалення ресторану (DELETE - Soft Delete)
+DELETE http://localhost:3000/api/restaurants/{{rest_id}}
