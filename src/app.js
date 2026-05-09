@@ -11,6 +11,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        message: 'CQRS Food Delivery API is running'
+    });
+});
+
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/menu-items', menuRoutes);
 app.use('/api/orders', orderRoutes);
