@@ -8,7 +8,7 @@ import { LoginQueryHandler } from '../../application/handlers/query-handlers/Log
 const userRepository = new PrismaUserRepository();
 const userFactory = new UserFactory(userRepository);
 const registerHandler = new RegisterUserCommandHandler(userFactory, userRepository);
-const loginHandler = new LoginQueryHandler(userRepository);
+const loginHandler = new LoginQueryHandler();
 
 export const register = async (req, res, next) => {
     try {
@@ -36,7 +36,7 @@ export const login = async (req, res, next) => {
         });
 
         const result = await loginHandler.execute(query);
-        res.status(200).json(result); // Повертає { token }
+        res.status(200).json(result);
     } catch (err) {
         if (err.statusCode === 401) {
             return res.status(401).json({ error: err.message });

@@ -8,7 +8,7 @@ import { PrismaMenuRepository } from '../../infrastructure/repositories/PrismaMe
 
 const menuRepo = new PrismaMenuRepository();
 const createMenuItemHandler = new CreateMenuItemCommandHandler(menuRepo);
-const toggleAvailabilityHandler = new ToggleMenuItemAvailabilityCommandHandler(menuRepo);
+const toggleAvailabilityHandler = new ToggleMenuItemCommandHandler(menuRepo);
 const getMenuHandler = new GetMenuForRestaurantQueryHandler();
 
 export const createMenuItem = async (req, res, next) => {

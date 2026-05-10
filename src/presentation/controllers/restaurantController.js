@@ -2,10 +2,10 @@ import { CreateRestaurantCommand } from '../../application/commands/CreateRestau
 import { CreateRestaurantCommandHandler } from '../../application/handlers/command-handlers/CreateRestaurantCommandHandler.js';
 import { DeactivateRestaurantCommand } from '../../application/commands/DeactivateRestaurantCommand.js';
 import { DeactivateRestaurantCommandHandler } from '../../application/handlers/command-handlers/DeactivateRestaurantCommandHandler.js';
-import { GetActiveRestaurantsQuery } from '../../application/queries/GetActiveRestaurantsQuery.js';
-import { GetActiveRestaurantsQueryHandler } from '../../application/handlers/query-handlers/GetActiveRestaurantsQueryHandler.js';
-import { GetRestaurantByIdQuery } from '../../application/queries/GetRestaurantByIdQuery.js';
-import { GetRestaurantByIdQueryHandler } from '../../application/handlers/query-handlers/GetRestaurantByIdQueryHandler.js';
+import { GetActiveRestaurantsQuery } from '../../application/queries/RestaurantQueries.js';
+import { GetActiveRestaurantsQueryHandler } from '../../application/handlers/query-handlers/RestaurantQueryHandlers.js';
+import { GetRestaurantByIdQuery } from '../../application/queries/RestaurantQueries.js';
+import { GetRestaurantByIdQueryHandler } from '../../application/handlers/query-handlers/RestaurantQueryHandlers.js';
 import { PrismaRestaurantRepository } from '../../infrastructure/repositories/PrismaRestaurantRepository.js';
 
 const restaurantRepo = new PrismaRestaurantRepository();
@@ -40,7 +40,7 @@ export const deleteRestaurant = async (req, res, next) => {
 
 export const getAllRestaurants = async (req, res, next) => {
     try {
-        const query = new GetActiveRestaurantsQuery({});
+        const query = new GetActiveRestaurantsQuery();
         const result = await getActiveRestaurantsHandler.execute(query);
         res.status(200).json(result);
     } catch (error) { next(error); }
