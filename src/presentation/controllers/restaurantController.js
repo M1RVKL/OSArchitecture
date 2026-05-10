@@ -7,12 +7,25 @@ import { GetActiveRestaurantsQueryHandler } from '../../application/handlers/que
 import { GetRestaurantByIdQuery } from '../../application/queries/RestaurantQueries.js';
 import { GetRestaurantByIdQueryHandler } from '../../application/handlers/query-handlers/RestaurantQueryHandlers.js';
 import { PrismaRestaurantRepository } from '../../infrastructure/repositories/PrismaRestaurantRepository.js';
+import { GetMenuForRestaurantQuery } from '../../application/queries/RestaurantQueries.js';
+import { GetMenuForRestaurantQueryHandler } from '../../application/handlers/query-handlers/GetMenuForRestaurantQueryHandler.js';
 
 const restaurantRepo = new PrismaRestaurantRepository();
 const createRestaurantHandler = new CreateRestaurantCommandHandler(restaurantRepo);
 const deactivateRestaurantHandler = new DeactivateRestaurantCommandHandler(restaurantRepo);
 const getActiveRestaurantsHandler = new GetActiveRestaurantsQueryHandler(); 
 const getRestaurantByIdHandler = new GetRestaurantByIdQueryHandler();
+const getMenuForRestaurantHandler = new GetMenuForRestaurantQueryHandler(); 
+
+export const getRestaurantMenu = async (req, res, next) => {
+    try {
+        const query = new GetMenuForRestaurantQuery({ 
+            restaurantId: req.params.id 
+        });
+        const result = await getMenuForRestaurantHandler.execute(query);
+        res.status(200).json(result);
+    } catch (error) { next(error); }
+};
 
 export const createRestaurant = async (req, res, next) => {
     try {
@@ -52,4 +65,8 @@ export const getRestaurantById = async (req, res, next) => {
         const result = await getRestaurantByIdHandler.execute(query);
         res.status(200).json(result);
     } catch (error) { next(error); }
+};
+
+export const updateRestaurant = async (req, res, next) => {
+    res.status(501).json({ message: "Not implemented yet" });
 };

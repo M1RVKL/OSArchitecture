@@ -5,7 +5,7 @@ export class GetMenuForRestaurantQueryHandler {
         const rawMenu = await prisma.menuItem.findMany({
             where: {
                 restaurant_id: query.restaurantId,
-                is_active: true
+                is_available: true
             }
         });
 

@@ -5,3 +5,9 @@ export class GetRestaurantByIdQuery {
         this.id = id;
     }
 }
+
+export class GetMenuForRestaurantQuery {
+    constructor({ restaurantId }) {
+        this.restaurantId = restaurantId;
+    }
+}

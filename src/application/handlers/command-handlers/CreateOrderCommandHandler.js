@@ -21,13 +21,12 @@ export class CreateOrderCommandHandler {
                 throw new Error(`Страва ${itemDto.menuItemId} недоступна`);
             }
 
-            const orderItem = new OrderItem(
-                crypto.randomUUID(),
-                menuItem.id,
-                menuItem.name,
-                itemDto.quantity,
-                menuItem.price
-            );
+         const orderItem = new OrderItem(
+    menuItem.id,
+    menuItem.name,
+    itemDto.quantity,
+    menuItem.price
+);
 
             order.addItem(orderItem);
         }
