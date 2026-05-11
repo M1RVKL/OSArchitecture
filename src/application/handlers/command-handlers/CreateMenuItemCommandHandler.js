@@ -9,12 +9,12 @@ export class CreateMenuItemCommandHandler {
 
     async execute(command) {
         const menuItem = new MenuItem({
-    id: crypto.randomUUID(),
-    restaurantId: command.restaurantId,
-    name: command.name,
-    price: new Price(command.price),
-    isAvailable: command.isAvailable ?? true
-});
+            id: crypto.randomUUID(),
+            restaurantId: command.restaurantId,
+            name: command.name,
+            price: new Price(command.price),
+            isAvailable: command.isAvailable ?? true
+        });
         
         await this.menuRepository.save(menuItem);
         return menuItem.id;

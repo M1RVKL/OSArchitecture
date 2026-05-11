@@ -22,11 +22,11 @@ export class CreateOrderCommandHandler {
             }
 
          const orderItem = new OrderItem(
-    menuItem.id,
-    menuItem.name,
-    itemDto.quantity,
-    menuItem.price
-);
+            menuItem.id,
+            menuItem.name,
+            itemDto.quantity,
+            menuItem.price
+        );
 
             order.addItem(orderItem);
         }
