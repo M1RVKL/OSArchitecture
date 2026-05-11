@@ -1,49 +1,60 @@
-import { CreateOrderUseCase } from '../../application/use-cases/CreateOrderUseCase.js';
-import { UpdateOrderStatusUseCase } from '../../application/use-cases/UpdateOrderStatusUseCase.js';
+import { CreateOrderCommand } from '../../application/commands/CreateOrderCommand.js';
+import { CreateOrderCommandHandler } from '../../application/handlers/command-handlers/CreateOrderCommandHandler.js';
+import { UpdateOrderStatusCommand } from '../../application/commands/UpdateOrderStatusCommand.js';
+import { UpdateOrderStatusCommandHandler } from '../../application/handlers/command-handlers/UpdateOrderStatusCommandHandler.js';
+import { OrderFactory } from '../../domain/factories/OrderFactory.js';
 import { PrismaOrderRepository } from '../../infrastructure/repositories/PrismaOrderRepository.js';
 import { PrismaRestaurantRepository } from '../../infrastructure/repositories/PrismaRestaurantRepository.js';
 import { PrismaMenuRepository } from '../../infrastructure/repositories/PrismaMenuRepository.js';
-import { OrderFactory } from '../../domain/factories/OrderFactory.js';
+import { GetOrderByIdQuery } from '../../application/queries/GetOrderByIdQuery.js';
+import { GetOrderByIdQueryHandler } from '../../application/handlers/query-handlers/GetOrderByIdQueryHandler.js';
 
 const restaurantRepo = new PrismaRestaurantRepository();
 const orderRepo = new PrismaOrderRepository();
 const menuRepo = new PrismaMenuRepository();
 const orderFactory = new OrderFactory(restaurantRepo);
-const createOrderUseCase = new CreateOrderUseCase(orderFactory, orderRepo, menuRepo);
-const updateOrderStatusUseCase = new UpdateOrderStatusUseCase(orderRepo);
+const createOrderHandler = new CreateOrderCommandHandler(orderFactory, orderRepo, menuRepo);
+const updateOrderStatusHandler = new UpdateOrderStatusCommandHandler(orderRepo);
+const getOrderByIdHandler = new GetOrderByIdQueryHandler();
 
 export const createOrder = async (req, res, next) => {
     try {
-        const dto = {
+        const command = new CreateOrderCommand({
             customerId: req.user.userId,
             restaurantId: req.body.restaurant_id,
             deliveryAddress: req.body.delivery_address,
             items: req.body.items
-        };
+        });
 
-        const result = await createOrderUseCase.execute(dto);
-
-        res.status(201).json(result);
+        const orderId = await createOrderHandler.execute(command);
+        res.status(201).json({ id: orderId, message: 'Замовлення створено' });
     } catch (error) {
         next(error);
     }
 };
+
 export const updateOrderStatus = async (req, res, next) => {
     try {
-        const { id } = req.params;
-
-        const { action } = req.body;
-
+        const action = req.body.action;
         const courierId = action === 'assign_courier' ? req.user.userId : null;
 
-        const result = await updateOrderStatusUseCase.execute({
-            orderId: id,
+        const command = new UpdateOrderStatusCommand({
+            orderId: req.params.id,
             action: action,
             courierId: courierId
         });
 
-        res.status(200).json(result);
+        await updateOrderStatusHandler.execute(command);
+        res.status(200).json({ message: 'Статус замовлення успішно оновлено' });
     } catch (error) {
         next(error);
     }
+};
+
+export const getOrderById = async (req, res, next) => {
+    try {
+        const query = new GetOrderByIdQuery({ orderId: req.params.id });
+        const result = await getOrderByIdHandler.execute(query);
+        res.status(200).json(result);
+    } catch (error) { next(error); }
 };
