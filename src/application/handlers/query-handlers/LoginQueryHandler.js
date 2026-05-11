@@ -8,10 +8,8 @@ export class LoginQueryHandler {
             where: { email: query.email }
         });
 
-        if (!user || !(await bcrypt.compare(query.password, user.password_hash))) {
-            const err = new Error('Невірний email або пароль');
-            err.statusCode = 401;
-            throw err;
+       if (!user || !(await bcrypt.compare(query.password, user.password_hash))) {
+            throw new Error('Користувача не знайдено або пароль невірний');
         }
 
         const token = jwt.sign(
