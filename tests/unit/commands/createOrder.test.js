@@ -11,11 +11,9 @@ describe('CreateOrderCommandHandler (Unit with Fakes)', () => {
     let mockOrderFactory;
 
     beforeEach(() => {
-        // Використовуємо реальні Fake-репозиторії (In-memory)
         orderRepo = new FakeOrderRepository();
         menuRepo = new FakeMenuRepository();
         
-        // Мокаємо фабрику, бо вона зазвичай лише створює корінь агрегату
         mockOrderFactory = {
             createNewOrder: jest.fn().mockResolvedValue({
                 id: 'generated-order-id',
@@ -29,7 +27,6 @@ describe('CreateOrderCommandHandler (Unit with Fakes)', () => {
     });
 
     test('має успішно створити замовлення та зберегти його у FakeOrderRepository', async () => {
-        // Arrange: підготовка даних у фейковому меню
         const menuItem = { 
             id: 'pizza-123', 
             name: 'Маргарита', 
@@ -46,10 +43,8 @@ describe('CreateOrderCommandHandler (Unit with Fakes)', () => {
                 quantity: 2 }]
         };
 
-        // Act
         const resultId = await handler.execute(command);
 
-        // Assert: перевірка результату через стан репозиторію
         const savedOrder = await orderRepo.findById(resultId);
         
         expect(resultId).toBe('generated-order-id');
@@ -64,7 +59,6 @@ describe('CreateOrderCommandHandler (Unit with Fakes)', () => {
     });
 
     test('має викинути помилку, якщо страва позначена як недоступна', async () => {
-        // Arrange: страва є, але вона недоступна
         await menuRepo.save({ id: 'sushi-1', name: 'Суші', isAvailable: false });
 
         const command = {
@@ -73,10 +67,8 @@ describe('CreateOrderCommandHandler (Unit with Fakes)', () => {
             items: [{ menuItemId: 'sushi-1', quantity: 1 }]
         };
 
-        // Act & Assert
         await expect(handler.execute(command)).rejects.toThrow('Страва sushi-1 недоступна');
         
-        // Переконуємось, що в базу замовлень нічого не потрапило
         expect(orderRepo.orders.size).toBe(0);
     });
 });

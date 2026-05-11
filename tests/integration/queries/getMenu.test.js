@@ -13,24 +13,18 @@ describe('GetMenuForRestaurant (Integration)', () => {
     const managerId = crypto.randomUUID();
 
 beforeAll(async () => {
-    // 1. Очищуємо базу (порядок важливий через FK)
-    await prisma.menuItem.deleteMany();
-    await prisma.restaurant.deleteMany();
-    await prisma.user.deleteMany();
-    
-    // 2. Створюємо менеджера (додаємо phone та виправляємо role)
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "order_items", "menu_items", "restaurants", "users" CASCADE;`);
     await prisma.user.create({
         data: {
             id: managerId,
             email: 'manager@test.com',
             name: 'Test Manager',
             password_hash: 'hash_placeholder',
-            phone: '+380991234567', // Обов'язкове поле
-            role: 'MANAGER' // У верхньому регістрі, як в Enum
+            phone: '+380991234567',
+            role: 'MANAGER'
         }
     });
 
-    // 3. Створюємо ресторани (address — це Json у схемі)
     await prisma.restaurant.createMany({
         data: [
             { 
@@ -48,7 +42,6 @@ beforeAll(async () => {
         ]
     });
 
-    // 4. Створюємо страви (використовуємо точні назви зі схеми)
     await prisma.menuItem.createMany({
         data: [
             {

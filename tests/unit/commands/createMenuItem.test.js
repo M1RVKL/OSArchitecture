@@ -11,7 +11,6 @@ describe('CreateMenuItemCommandHandler (Unit with Fake)', () => {
     });
 
     test('має успішно створити страву та зберегти її в Fake репозиторій', async () => {
-        // Arrange
         const command = {
             restaurantId: 'rest-123',
             name: 'Борщ',
@@ -19,10 +18,8 @@ describe('CreateMenuItemCommandHandler (Unit with Fake)', () => {
             isAvailable: true
         };
 
-        // Act
         const resultId = await handler.execute(command);
 
-        // Assert
         const savedItem = await fakeRepo.findById(resultId);
         expect(savedItem).toBeDefined();
         expect(savedItem.name).toBe('Борщ');
@@ -31,18 +28,14 @@ describe('CreateMenuItemCommandHandler (Unit with Fake)', () => {
     });
 
     test('має викинути помилку, якщо ціна від’ємна (валідація інваріантів)', async () => {
-        // Arrange
         const command = {
             restaurantId: 'rest-123',
             name: 'Борщ',
-            price: -50 // Невалідна ціна для Value Object Price
+            price: -50
         };
 
-        // Act & Assert
-        // Перевіряємо, що Handler валідує інваріанти домену 
         await expect(handler.execute(command)).rejects.toThrow();
         
-        // Переконуємось, що в репозиторій нічого не було записано
         const items = await fakeRepo.findByRestaurantId('rest-123');
         expect(items.length).toBe(0);
     });

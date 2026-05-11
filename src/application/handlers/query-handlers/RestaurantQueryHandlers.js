@@ -17,8 +17,19 @@ export class GetActiveRestaurantsQueryHandler {
 
 export class GetRestaurantByIdQueryHandler {
     async execute(query) {
+        let finalId;
+        if (typeof query === 'string') {
+            finalId = query;
+        } else {
+            finalId = query.restaurantId || query.id;
+        }
+
+        if (typeof finalId === 'object' && finalId !== null) {
+            finalId = finalId.restaurantId || finalId.id;
+        }
+
         const restaurant = await prisma.restaurant.findUnique({
-            where: { id: query.id }
+            where: { id: finalId }
         });
 
         if (!restaurant) throw new Error('Ресторан не знайдено');

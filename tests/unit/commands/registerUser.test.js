@@ -10,7 +10,6 @@ describe('RegisterUserCommandHandler (Unit with Fake)', () => {
     beforeEach(() => {
         fakeRepo = new FakeUserRepository();
         
-        // Мокаємо фабрику, щоб не залежати від логіки створення сутності
         mockFactory = {
             createNewUser: jest.fn().mockResolvedValue({
                 id: 'user-uuid-123',
@@ -23,7 +22,6 @@ describe('RegisterUserCommandHandler (Unit with Fake)', () => {
     });
 
     test('має успішно зареєструвати користувача та зберегти його у FakeUserRepository', async () => {
-        // Arrange
         const command = {
             email: 'test@mail.com',
             password: 'securePassword123',
@@ -32,10 +30,8 @@ describe('RegisterUserCommandHandler (Unit with Fake)', () => {
             role: 'customer'
         };
 
-        // Act
         const resultId = await handler.execute(command);
 
-        // Assert
         const savedUser = await fakeRepo.findByEmail('test@mail.com');
         
         expect(resultId).toBe('user-uuid-123');
@@ -45,17 +41,13 @@ describe('RegisterUserCommandHandler (Unit with Fake)', () => {
     });
 
     test('має викинути помилку, якщо пароль відсутній', async () => {
-        // Arrange
         const command = {
             email: 'test@mail.com',
             name: 'Vladyslav'
-            // password відсутній
         };
 
-        // Act & Assert
         await expect(handler.execute(command)).rejects.toThrow('Пароль є обов’язковим');
         
-        // Перевіряємо, що в репозиторій нічого не потрапило
         expect(fakeRepo.users.size).toBe(0);
     });
 });
