@@ -5,6 +5,11 @@ import restaurantRoutes from './presentation/routes/restaurantRoutes.js';
 import menuRoutes from './presentation/routes/menuRoutes.js';
 import orderRoutes from './presentation/routes/orderRoutes.js';
 import authRoutes from './presentation/routes/authRoutes.js';
+import { eventBus } from './infrastructure/events/EventBus.js';
+import { NotificationEventHandler } from './infrastructure/notifications/NotificationEventHandler.js';
+
+const notificationHandler = new NotificationEventHandler();
+eventBus.subscribe('OrderCreatedEvent', (event) => notificationHandler.handleOrderCreated(event));
 
 const app = express();
 
